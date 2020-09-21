@@ -14,7 +14,7 @@ dependencies:
   cupertino_icons: ^0.1.3
   http: any
   cached_network_image: ^2.3.2+1
-  share: ^0.6.5+1
+  esys_flutter_share: ^1.0.2
   image_picker_saver: ^0.3.0
 dev_dependencies:
   flutter_test:

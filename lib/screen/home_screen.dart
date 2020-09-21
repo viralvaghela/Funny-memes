@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker_saver/image_picker_saver.dart';
-import 'package:share/share.dart';
+import 'package:esys_flutter_share/esys_flutter_share.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({Key key}) : super(key: key);
@@ -16,19 +16,15 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String url = "https://meme-api.herokuapp.com/gimme";
-  String imgUrl;
+  String imgUrl = "https://i.redd.it/e7upcwi0y8o51.jpg";
   bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
-    getMeme();
+    //getMeme();
   }
-  void saveImage() async {
-    var response = await http.get(imgUrl);
-    var filePath = await ImagePickerSaver.saveFile(fileData: response.bodyBytes);
-    var savedFile = File.fromUri(Uri.file(filePath));
-    print(savedFile);
-  }
+
   void getMeme() async {
     var responseData = await http.get(url);
     var jsonData = jsonDecode(responseData.body);
@@ -36,6 +32,20 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       imgUrl = jsonData['url'];
       print(imgUrl);
+      isLoading = false;
+    });
+  }
+
+  void shareImage() async {
+    setState(() {
+      isLoading = true;
+    });
+    var request = await HttpClient().getUrl(Uri.parse(imgUrl));
+    var response = await request.close();
+    Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+    await Share.file('ESYS AMLOG', 'amlog.jpg', bytes, 'image/jpg');
+    setState(() {
       isLoading = false;
     });
   }
@@ -56,32 +66,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   Padding(padding: EdgeInsets.all(10)),
                   Container(
                     padding: EdgeInsets.all(5),
-                    child: Image.network("$imgUrl"),
+                    child:
+                        imgUrl != null ? Image.network("$imgUrl") : Container(),
                   ),
                   Padding(padding: EdgeInsets.all(10)),
-                  RaisedButton(
-                    onPressed: () {
-                      setState(() {
-                        isLoading = true;
-                      });
-                      getMeme();
-                    },
-                    child: Text(
-                      "Next",
-                    ),
-                  ),
-                  FloatingActionButton(onPressed: (){saveImage();})
                 ],
-              
               ),
-              
             )
           : Center(child: CircularProgressIndicator()),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.share),
         onPressed: () {
-          Share.share(imgUrl,subject: "Check out this funnt meme");
+          shareImage();
         },
-        child: Icon(Icons.share),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        notchMargin: 4.0,
+        child: new Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.menu),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(Icons.navigate_next),
+              onPressed: () {
+                setState(() {
+                  isLoading = true;
+                });
+                getMeme();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
